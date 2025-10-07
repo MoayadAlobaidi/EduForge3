@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+  PARENT
+}
+
+enum QAStatus {
+  NOT_RUN
+  RUNNING
+  PASS
+  FLAG
+  FAIL
+}
+
+enum PubStatus {
+  DRAFT
+  READY_FOR_REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+model Organization {
+  id        String    @id @default(cuid())
+  name      String
+  locale    String    @default("en")
+  createdAt DateTime  @default(now())
+  users     User[]
+  groups    Group[]
+  subjects  Subject[]
+}
+
+model User {
+  id          String       @id @default(cuid())
+  email       String       @unique
+  name        String
+  role        Role         @default(TEACHER)
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  createdAt   DateTime     @default(now())
+  memberships Membership[]
+  submissions Submission[]
+  taughtGroups Group[]     @relation("TeacherGroups")
+}
+
+model Group {
+  id          String       @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  name        String
+  grade       String
+  teacherId   String
+  teacher     User         @relation("TeacherGroups", fields: [teacherId], references: [id])
+  lessons     Lesson[]
+  memberships Membership[]
+  assignments Assignment[]
+}
+
+model Membership {
+  id      String @id @default(cuid())
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id])
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+
+  @@unique([groupId, userId])
+}
+
+model Subject {
+  id      String       @id @default(cuid())
+  orgId   String
+  org     Organization @relation(fields: [orgId], references: [id])
+  name    String
+  lessons Lesson[]
+}
+
+model Lesson {
+  id          String        @id @default(cuid())
+  groupId     String
+  group       Group         @relation(fields: [groupId], references: [id])
+  subjectId   String
+  subject     Subject       @relation(fields: [subjectId], references: [id])
+  title       String
+  standards   String
+  durationMin Int
+  language    String        @default("en")
+  status      PubStatus     @default(DRAFT)
+  qaStatus    QAStatus      @default(NOT_RUN)
+  createdBy   String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  plan        LessonPlan?
+  outline     SlideOutline?
+  assessment  Assessment?
+  qaReports   QAReport[]
+  assignments Assignment[]
+}
+
+model LessonPlan {
+  id       String @id @default(cuid())
+  lessonId String @unique
+  lesson   Lesson @relation(fields: [lessonId], references: [id])
+  steps    Json // JSON: [{time,type,content}]
+}
+
+model SlideOutline {
+  id       String @id @default(cuid())
+  lessonId String @unique
+  lesson   Lesson @relation(fields: [lessonId], references: [id])
+  slides   Json // JSON: [{title,bullets[],notes}]
+}
+
+model Assessment {
+  id         String @id @default(cuid())
+  lessonId   String @unique
+  lesson     Lesson @relation(fields: [lessonId], references: [id])
+  items      Json // JSON
+  answerKey  Json // JSON
+  rubric     Json // JSON
+  exitTicket Json? // JSON
+}
+
+model Assignment {
+  id          String       @id @default(cuid())
+  lessonId    String
+  lesson      Lesson       @relation(fields: [lessonId], references: [id])
+  groupId     String
+  group       Group        @relation(fields: [groupId], references: [id])
+  type        String // QUIZ|WORKSHEET|PROJECT
+  dueAt       DateTime
+  submissions Submission[]
+}
+
+model Submission {
+  id           String     @id @default(cuid())
+  assignmentId String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+  studentId    String
+  student      User       @relation(fields: [studentId], references: [id])
+  answers      String // JSON string
+  score        Float?
+  feedback     String?
+  status       String     @default("SUBMITTED")
+  submittedAt  DateTime   @default(now())
+  gradedAt     DateTime?
+  graderId     String?
+}
+
+model QAReport {
+  id        String   @id @default(cuid())
+  lessonId  String
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  status    QAStatus
+  rules     Json // JSON: [{name,status,reason,fix}]
+  createdAt DateTime @default(now())
+}
