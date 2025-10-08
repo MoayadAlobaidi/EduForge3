@@ -191,3 +191,18 @@ CREATE POLICY "Allow all operations on assessments" ON assessments FOR ALL USING
 CREATE POLICY "Allow all operations on assignments" ON assignments FOR ALL USING (true);
 CREATE POLICY "Allow all operations on submissions" ON submissions FOR ALL USING (true);
 CREATE POLICY "Allow all operations on qa_reports" ON qa_reports FOR ALL USING (true);
+
+-- Update table names to match Prisma models
+ALTER TABLE organizations RENAME TO "Organization";
+ALTER TABLE users RENAME TO "User";
+ALTER TABLE groups RENAME TO "Group";
+ALTER TABLE subjects RENAME TO "Subject";
+ALTER TABLE memberships RENAME TO "Membership";
+ALTER TABLE lessons RENAME TO "Lesson";
+ALTER TABLE lesson_plans RENAME TO "LessonPlan";
+ALTER TABLE slide_outlines RENAME TO "SlideOutline";
+ALTER TABLE assessments RENAME TO "Assessment";
+ALTER TABLE assignments RENAME TO "Assignment";
+ALTER TABLE submissions RENAME TO "Submission";
+ALTER TABLE qa_reports RENAME TO "QAReport";
+ALTER TABLE events RENAME TO "Event";
