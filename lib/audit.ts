@@ -1,10 +1,18 @@
-import { createClient } from "@supabase/supabase-js";
+import { Prisma } from "@prisma/client";
+import { prisma } from "./prisma";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!, 
-  process.env.SUPABASE_SERVICE_ROLE! // server-only env
-);
-
-export async function audit(action: string, details: any = {}, level: "INFO"|"WARN"|"ERROR"="INFO", actor?: string|null, entity?: string|null) {
-  await supabase.from("audit_logs").insert({ action, level, details, actor: actor ?? null, entity: entity ?? null });
+export async function audit(
+  action: string,
+  details: any = {},
+  level: "INFO"|"WARN"|"ERROR" = "INFO",
+  actor?: string|null,
+  entity?: string|null
+) {
+  try {
+    await prisma.audit_logs.create({
+      data: { action, level, details: details as Prisma.JsonObject, actor, entity } as any
+    });
+  } catch (e) {
+    console.error("audit insert error", e);
+  }
 }
