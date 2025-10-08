@@ -139,6 +139,31 @@ CREATE TABLE IF NOT EXISTS qa_reports (
   created_at timestamptz DEFAULT now()
 );
 
+-- Events table
+CREATE TABLE IF NOT EXISTS events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id uuid REFERENCES organizations(id),
+  title text NOT NULL,
+  description text,
+  starts_at timestamptz NOT NULL,
+  ends_at timestamptz NOT NULL,
+  location text,
+  created_by uuid REFERENCES users(id),
+  audience text NOT NULL DEFAULT 'ALL',
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  CONSTRAINT valid_audience CHECK (
+    audience IN ('ALL', 'TEACHERS', 'STUDENTS', 'PARENTS') 
+    OR audience LIKE 'GROUP:%'
+  )
+);
+
+-- Add to RLS enables
+ALTER TABLE events ENABLE ROW LEVEL SECURITY;
+
+-- Add to policies
+CREATE POLICY "Allow all operations on events" ON events FOR ALL USING (true);
+
 -- Enable Row Level Security
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
